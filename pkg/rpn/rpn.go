@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"github.com/MaksaNeNegr/calc_go/rpn"
+	// "github.com/MaksaNeNegr/calc_go/pkg/rpn"
 )
 
 // var(

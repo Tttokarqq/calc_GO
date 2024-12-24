@@ -2,7 +2,11 @@ package rpn
 
 import (
 	"errors"
-	"fmt"
-	"strconv"
-	"strings"
+)
+
+var(
+	err_skobk = errors.New("ошибка в записи скобок")
+	err_symbl = errors.New("ошибка - непредвиденный сивол")
+	err_znak = errors.New("ошибка в записи знаков")
+	err_float = errors.New("ошибка при обработке дробных значений")
 )
