@@ -63,7 +63,7 @@ func CalcHandler(w http.ResponseWriter, r *http.Request) {
 	// w.Header().Set("Content-Type", "application/json")
 }
 
-func Accuracy(w http.ResponseWriter, r *http.Request) {
+func accuracy_(w http.ResponseWriter, r *http.Request) {
 	acc := r.URL.Query().Get("accuracy")
 	acc_, err := strconv.Atoi(acc)
 	if err != nil{
@@ -78,8 +78,8 @@ func Accuracy(w http.ResponseWriter, r *http.Request) {
 
 func (a *Application) Run() { 
 	http.HandleFunc("/api/v1/calculate", CalcHandler)
-	// http.HandleFunc("/api/v1/calculate/acc", Accuracy)
-	http.HandleFunc("/api/v1/calculate/acc", Accuracy)
+	// http.HandleFunc("/api/v1/calculate/acc", accuracy_)
+	http.HandleFunc("/api/v1/calculate/acc", accuracy_)
 	http.ListenAndServe(":8080", nil)
 }
 // curl http://localhost:8080/api/v1/calculate/acc?accuracy=2
