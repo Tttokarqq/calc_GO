@@ -98,6 +98,9 @@ func Calc(expression string) (string, error) {
 					return "-1", err_znak
 				} else if (i == 0 && string(symbol) == "+"){ // если начинается с +
 					expression = expression[1:]
+				} else if (string(symbol) == "*" || string(expression[i + 1]) == "/") && (string(symbol) == "*" || string(expression[i + 1]) == "/"){ 
+					// когда подряд когда подряд ** или */ или /* или //
+					return "-1", err_znak
 				}
 			} 
 		}
