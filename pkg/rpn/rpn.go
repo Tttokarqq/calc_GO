@@ -5,21 +5,20 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	// "github.com/MaksaNeNegr/calc_go/pkg/rpn"
+	// "github.com/MaksaNeNegr/calc_go/application"
+)
+var (
+	Tochnost = "%.7f"
 )
 
-// var(
-// 	err_skobk = errors.New("ошибка в записи скобок")
-// 	err_symbl = errors.New("ошибка - непредвиденный сивол")
-// 	err_znak = errors.New("ошибка в записи знаков")
-// 	err_float = errors.New("ошибка при обработке дробных значений")
-// )
+func ChangeTochonst(s string){ // используется в хендлере Accuracy
+	Tochnost = "%." + s + "f"
+}
 
 func claearExpr(expression string) (string, error){  // проверка, удаление лишних знаков. Раньше была в Calc, но решил вынести, объяснение есть ниже
 	for i := 0; i < len(expression); i++{
 		symbol := expression[i]
 		if i + 1 == len(expression) && isZnak(symbol){ // если в конце выражения стоит знак 
-			// fmt.Println(expression)
 			return "0", err_znak
 		}
 		if isZnak(symbol){
@@ -71,7 +70,7 @@ func isNum(s byte) bool{ // среди цифр есть ".", для работ�
 func isZnak(s byte) bool{
 	nums := "-+*/"
 	for i := 0; i < len(nums); i++{
-		if s == nums[i]{return true}
+		if s == nums[i] {return true}
 	}
 	return false
 }
@@ -149,19 +148,19 @@ func Calc(expression string) (string, error) {
 			if string(symbol) == ")" || string(symbol) == "("{ // найдена не парная скобка 
 				return "0", err_skobk
 			} else {
-				fmt.Println(expression, "!!!:", string(symbol), string(expression[i + 1]) )
 				return "0", err_symbl // найден не предвиденный символ
 			}
 		}
 		if i + 1 == len(expression) || znak2 != ""{ 
 			// промежуточное вычисление, когда индекс дошел до конца выражения или найдем второй знак
 			if znak1 == ""{
-				if num1_znak > 0 && num2_znak > 0{
-					// fmt.Println(expression, num1_znak, num2_znak)
-					return num1, nil
-				} else {
-					return "-" + num1, nil
-				}
+				num1_, _ := strconv.ParseFloat(num1, 64) // проверка, что num1 <> 0, удаление лишних нулей в конце после запятой
+				if num1_znak < 0{
+					num1_ *= -1.0
+				} 
+				num1 = fmt.Sprintf("%g", num1_) // к примеру num1 == 5.2000, num_znak = -1 -> 5.2
+
+				return num1, nil
 			}
 			if (znak1 == "+" || znak1 == "-") && (znak2 == "*" || znak2 == "/"){
 				m, err := Calc(expression[ind2:]) // отправление в рекурсию, если второй знак с большим приоритетом
@@ -182,21 +181,27 @@ func Calc(expression string) (string, error) {
 				num2_ *= num2_znak
 				znach := ""
 				if znak1 == "-"{
-					znach = fmt.Sprintf("%v",  fmt.Sprintf("%g", num1_ - num2_)) 
+					// znach = fmt.Sprintf("%v",  fmt.Sprintf("%g", num1_ - num2_)) 
+					znach =  fmt.Sprintf(Tochnost,  num1_ - num2_) 
 				} else if znak1 == "+" {			
-					znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ + num2_)) 
+					// znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ + num2_)) 
+					znach =  fmt.Sprintf(Tochnost, num1_ + num2_) 
 				} else if znak1 == "*" {
-					znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ * num2_)) 
+					// znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ * num2_)) 
+					znach =  fmt.Sprintf(Tochnost, num1_ * num2_)
 				} else if znak1 == "/" {
 					if num2_ == 0 {return "-1", errors.New("деление на 0")}
-					znach =  fmt.Sprintf("%.9f", fmt.Sprintf("%g", num1_ / num2_))
+					// znach =  fmt.Sprintf("%.9f", fmt.Sprintf("%g", num1_ / num2_))
+					znach = fmt.Sprintf(Tochnost, num1_ / num2_)
 				}
-
-				expression, _ = claearExpr(expression[0:ind1] + znach + expression[ind2 + len(num2):])
-				// повторная очистка выражения. В прошлом варианте просто смотрелся num1_znak, и на его основе выбирались индексы, 
-				// но почему то при 2 - 1 * -0.5 --> 2 -- 1, мне лень было разбираться, я поэтому вынес очистку в отдельную функцию, 
-				// и после каждой операции "чищу" выражение
-				i, num1, num2, znak1, znak2, num1_znak, num1_znak, ind1, ind2, znach = -1, "", "", "", "", 1.0, 1.0, 0, 0, ""
+				if num1_znak > 0{
+					// expression, _ = claearExpr(expression[0:ind1] + znach + expression[ind2 + len(num2):])
+					expression = expression[0:ind1] + znach + expression[ind2 + len(num2):]
+				} else {
+					// expression, _ = claearExpr(expression[1:ind1] + znach + expression[ind2 + len(num2):])
+					expression = expression[1:ind1] + znach + expression[ind2 + len(num2):]
+				}
+				i, num1, num2, znak1, znak2, num1_znak, num2_znak, ind1, ind2, znach = -1, "", "", "", "", 1.0, 1.0, 0, 0, ""
 				
 			}
 			// fmt.Println(expression)
