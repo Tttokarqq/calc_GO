@@ -159,14 +159,14 @@ func Calc(expression string) (string, error) {
 					num1_ *= -1.0
 				} 
 				// num1 = fmt.Sprintf("%g", num1_) // к примеру num1 == 5.2000, num_znak = -1 -> 5.2
-				m, _ := strconv.Atoi(string(Tochnost[2:len(Tochnost) - 1]))
-				num1 = strconv.FormatFloat(num1_, 'f', m, 64)
-				if strings.Index(num1, ".") != -1{ // удаление "лишних нулей"
-					for i := len(num1) - 1; string(num1[i]) == "0"; i--{
-						num1 = string(num1[0:len(num1) - 2])
-						i --
-					}
-				}
+				// m, _ := strconv.Atoi(string(Tochnost[2:len(Tochnost) - 1]))
+				// num1 = strconv.FormatFloat(num1_, 'f', m, 64)
+				// if strings.Index(num1, ".") != -1{ // удаление "лишних нулей"
+				// 	for i := len(num1) - 1; string(num1[i]) == "0"; i--{
+				// 		num1 = string(num1[0:len(num1) - 2])
+				// 		i --
+				// 	}
+				// }
  				// num1 = fmt.Sprintf(Tochnost	, num1_) // к примеру num1 == 5.2000, num_znak = -1 -> 5.2
 				return num1, nil
 			}
