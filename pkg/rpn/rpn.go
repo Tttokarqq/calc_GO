@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"github.com/MaksaNeNegr/calc_go/errors"
+	"github.com/MaksaNeNegr/calc_go/rpn"
 )
 
 // var(
