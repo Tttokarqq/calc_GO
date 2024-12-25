@@ -68,13 +68,14 @@ func accuracy_(w http.ResponseWriter, r *http.Request) {
 	acc_, err := strconv.Atoi(acc)
 	if err != nil{
 		retErr(w, 405, rpn.Err_acc)
-	} else if acc_ >= 15 || acc_ < 0{
+	} else if acc_ >= 65 || acc_ < 0{
 		retErr(w, 405, rpn.Err_acc)
 	} else {
-		rpn.ChangeTochonst(acc)
+		// acc, _ = strconv.Itoa(acc_ + 2) // почему то всегда округляется на 2 цифры меньше???
+		rpn.ChangeTochonst(strconv.Itoa(acc_ + 2))
 	}
-	
 }
+
 
 func (a *Application) Run() { 
 	http.HandleFunc("/api/v1/calculate", CalcHandler)
