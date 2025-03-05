@@ -6,7 +6,9 @@ import (
 )
 
 func main() {
-	demon.a1()
+	// запуск сервера и 
 	app := application.New()
-	app.Run()
+	go demon.Demon_func()
+	go app.Run()
+	select{}
 }
