@@ -118,4 +118,4 @@ func (a *Application) Run() {
 	http.HandleFunc("/internal/task", getWork)
 	http.ListenAndServe(":8080", nil)
 }
-// curl http://localhost:8080/api/v1/calculate/acc?accuracy=2
+// curl http://localhost:8080/api/v1/calculate/acc?accuracy=2  
