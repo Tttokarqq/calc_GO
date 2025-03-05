@@ -9,8 +9,9 @@ import(
 
 
 func Demon_func(){
+	err := godotenv.Load()
 	for{
-		fmt.Println(os.LookupEnv("GITHUB_USERNAME"))
+		fmt.Println(os.Getenv("GITHUB_USERNAME"))
 		time.Sleep(2 * time.Second)
 	}
 }
