@@ -63,12 +63,12 @@ func CalcHandler(w http.ResponseWriter, r *http.Request) {
 	var req Request
 	decoder := json.NewDecoder(r.Body)
 	decoder.Decode(&req)
-	_, err := rpn.Calc(req.Expression)
+	r_, err := rpn.Calc2(req.Expression)
 	res_ := strconv.Itoa(id)
 	id += 1
 	w.Header().Set("Content-Type", "application/json")
 	if err == nil{
-		ex1 := express{res_, "wait", "none"}
+		ex1 := express{res_, "wait", r_}
 		List1.Expressions = append(List1.Expressions, ex1)
 		w.WriteHeader(200)
 		var res Response1
@@ -106,8 +106,25 @@ func showEx(w http.ResponseWriter, r *http.Request){
 
 
 
-func getWork(w http.ResponseWriter, r *http.Request){
-	fmt.Println("!1")
+func getWork(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(rpn.Tasks)
+    // for _, task := range List1 {
+    //     if _, err1 := strconv.ParseFloat(task.Arg1, 64); err1 == nil {
+    //         if _, err2 := strconv.ParseFloat(task.Arg2, 64); err2 == nil {
+    //             response := map[string]interface{}{
+    //                 "task": task,
+    //             }
+
+    //             w.Header().Set("Content-Type", "application/json")
+    //             w.WriteHeader(http.StatusOK)
+
+    //             if err := json.NewEncoder(w).Encode(response); err != nil {
+    //                 http.Error(w, err.Error(), http.StatusInternalServerError)
+    //             }
+    //             return
+    //         }
+    //     }
+    // }
 }
 
 func (a *Application) Run() { 

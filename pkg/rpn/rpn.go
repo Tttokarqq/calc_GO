@@ -1,27 +1,26 @@
 package rpn
 
 import (
-	// "errors"
-	// "fmt"
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 	"os"
 )
 
-type Task struct {
-    ID              string        `json:"id"`
-    Arg1            string        `json:"arg1"`
-    Arg2            string        `json:"arg2"`
-    Operation       string        `json:"operation"`
-    OperationTime   time.Duration `json:"operation_time"`
-    Process         string        `json:"process"` // Например, "waiting", "in_progress", "completed"
-    Result          string        `json:"result,omitempty"` // Результат, если задача завершена
+type Task struct{ // структура для хранения заданий
+	id string
+	arg1 string
+	arg2 string
+	operation string
+	operation_time time.Duration
+	process string // меняется, когда задание берется на выполнение
 }
 
 var ( // кол-во знаков после запятой, сохраняющиеся при расчетах
 	Tochnost = "%.7f"
-	Tasks =   // список заданий
+	Tasks = []Task{} // список заданий
 	Number_Operation = 0 // id операции
 )
 
@@ -245,7 +244,7 @@ func Calc(expression string) (string, error) {
 					s, _ := strconv.Atoi(os.Getenv("TIME_DIVISIONS_MS"))
 					tm = time.Millisecond  * time.Duration(s)
 				}
-				Tasks = append(Tasks, Task{znach, num1_, num2_, znak1, tm , "wait", ""})
+				Tasks = append(Tasks, Task{znach, num1_, num2_, znak1, tm , "wait"})
 				// if znak1 == "-"{
 				// 	znach =  fmt.Sprintf(Tochnost,  num1_ - num2_) 
 				// 	// znach =  strconv.FormatFloat(num1 - num2, 'f', -1, 64)
@@ -272,5 +271,146 @@ func Calc(expression string) (string, error) {
 		}
 	}
 	
+	return expression, nil
+}
+
+
+
+func Calc2(expression string) (string, error) { 
+	for _, i := range expression{ // удаление пробелов, хотя можно было просто continue :D
+		if string(i) == " "{
+			ind := strings.Index(expression, string(i))
+			expression = expression[0:ind] + expression[ind + 1:]
+		}
+	}
+	// боже как же я намучился со скобками, которые все усложняют и портят
+	// цикл, отправляющий в рекурсию найденное выражение в скобках (самое последнее, с максимальным приоритетом)
+	// и заменяющий его на возращенную строку (результат вычисления рекусрсии)
+	index := strings.Index(expression, "(") + 1 // индекс первой открытой скобки
+	index_left := 1 // количество открытых левых скобок
+	for strings.Index(expression, "(") != -1 && index < len(expression){
+		symbol := expression[index]
+		if string(symbol) == "("{
+			index_left += 1
+		} else if string(symbol) == ")"{
+			index_left -= 1
+		}
+		if index_left == 0{
+			m, err := Calc(expression[strings.Index(expression, "(") + 1 :index])
+			if err != nil{
+				return "0", err
+			}
+			expression = expression[0:strings.Index(expression, "(")] + m + expression[index + 1:]
+			index = strings.Index(expression, "(") + 1
+			index_left = 1
+		}  
+		if index_left > 1 && index + 1 == len(expression){ // когда последний символ, но есть не закрытые скобки
+			return "0", err_skobk
+		}
+		index++
+	}
+	expression, err := claearExpr(expression) // "очистка выражения, см. claearExpr"
+	if err != nil {
+		return "0", err
+	}
+
+	// рассчет выражений, в котором не осталось скобок и повторяющихся корректно записаны знаки
+	num1, num2 := "", "" // числа хранятся как строки
+	znak1, znak2 := "", "" // знаки между числами (минус перед числом не записывается, а идет  в num1_znak)
+	num1_znak, num2_znak := 1.0, 1.0 // знаки num1 и num2
+	ind1, ind2 := 0, 0 // индексы начала num1 и num2 
+	for i := 0; i < len(expression); i++{
+		symbol := expression[i]
+		if isZnak(symbol){
+			if string(symbol) == "-" && num1_znak == 1 && num1 == ""{
+				num1_znak = -1.0 // смена знака
+			} else if string(symbol) == "-" && num2 == "" && (znak1 == "*" || znak1 == "/"){
+				num2_znak = -1.0
+			} else if znak1 == ""{
+				znak1 = string(symbol)
+			} else if znak2 == ""{
+				znak2 = string(symbol)
+			}
+		} else if isNum(symbol){
+			if znak1 == ""{
+				if num1 == ""{
+					ind1 = i
+				}
+				if string(symbol) == "." && strings.Index(num1, ".") != -1 {return "0", Err_float_write} // попытка записать вторую точку в число
+				num1 += string(symbol) 
+			} else if znak1 != "" && znak2 == ""{
+				if num2 == ""{
+					ind2 = i
+				}
+				if string(symbol) == "." && strings.Index(num2, ".") != -1 {return "0", Err_float_write} // попытка записать вторую точку в число
+				num2 += string(symbol)
+			}
+		} else {
+			if string(symbol) == ")" || string(symbol) == "("{ // найдена не парная скобка 
+				// fmt.Println(expression)
+				return "0", err_skobk
+			} else {
+				return "0", err_symbl // найден не предвиденный символ
+			}
+		}
+		if i + 1 == len(expression) || znak2 != ""{ 
+			// промежуточное вычисление, когда индекс дошел до конца выражения или найдем второй знак
+			if znak1 == ""{ // когда осталось одно число (т.е. надо вернуть ответ)
+				num1_, _ := strconv.ParseFloat(num1, 64) // проверка, что num1 <> 0, удаление лишних нулей в конце после запятой
+				if num1_znak < 0{
+					num1_ *= -1.0
+				} 
+				// fmt.Println("!!!!", num1, num2, num1_znak, num2_znak)
+ 				num1 = fmt.Sprintf(Tochnost	, num1_) // округление
+				if strings.Index(num1, ".") != -1{ // удаление "лишних нулей"
+					i := len(num1) - strings.Index(num1, ".") - 1
+					for string(num1[i]) == "0" { i-- }
+					num1 = num1[0:i + 1]
+					if strings.Index(num1, ".") == len(num1) - 1 { num1 = num1[0:i] } // если осталось одна точка: 45. -> 45
+				}
+				return num1, nil
+			}
+			if (znak1 == "+" || znak1 == "-") && (znak2 == "*" || znak2 == "/"){
+				h1 := 0
+				if znak1 == "-"{
+					h1 = -1
+					fmt.Println(expression[ind2 + h1:], expression[0:ind2 + h1])
+				}
+				m, err := Calc(expression[ind2 + h1:]) // отправление в рекурсию, если второй знак с большим приоритетом
+				if err != nil{
+					return "0", err
+				}
+				expression,_  = claearExpr(expression[0:ind2 + h1] +"+" + m) // изменение выражения, с учетом "ответа рекурсии"
+				i, num1, num2, znak1, znak2, num1_znak, num2_znak, ind1, ind2 = -1, "", "", "", "", 1.0, 1.0, 0, 0 
+				// после высчитывания каждой операции ВСЕ сбравсывается и начинается сначала
+			} else {
+				num1_, _ := strconv.ParseFloat(num1, 64) // перевод из строки(num1) в дробное(num1_)
+				num1_ *= num1_znak
+				num2_, _ := strconv.ParseFloat(num2, 64)
+				num2_ *= num2_znak
+				znach := ""
+				if znak1 == "-"{
+					znach =  fmt.Sprintf(Tochnost,  num1_ - num2_) 
+					// znach =  strconv.FormatFloat(num1 - num2, 'f', -1, 64)
+				} else if znak1 == "+" {			
+					// znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ + num2_)) 
+					znach =  fmt.Sprintf(Tochnost, num1_ + num2_) 
+				} else if znak1 == "*" {
+					// znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ * num2_)) 
+					znach =  fmt.Sprintf(Tochnost, num1_ * num2_)
+				} else if znak1 == "/" {
+					if num2_ == 0 {return "-1", errors.New("деление на 0")}
+					// znach =  fmt.Sprintf("%.9f", fmt.Sprintf("%g", num1_ / num2_))
+					znach = fmt.Sprintf(Tochnost, num1_ / num2_)
+				}
+				h1 := 0 // индексы, если числа отрицательные, нужно брать срез с символа на 1 больше / меньше
+				h2 := 0
+				if num1_znak < 0 { h1 = 1 }
+				if num2_znak < 0 { h2 = 1 } 
+				expression = expression[h1:ind1] + znach + expression[ind2 - h2 + len(num2):]
+				i, num1, num2, znak1, znak2, num1_znak, num2_znak, ind1, ind2, znach = -1, "", "", "", "", 1.0, 1.0, 0, 0, ""
+			}
+		}
+	}
 	return expression, nil
 }
