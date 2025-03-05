@@ -3,9 +3,10 @@ package demon
 import(
 	"fmt"
 	"time"
-	"github.com/MaksaNeNegr/calc_go/varibels"
+	"github.com/MaksaNeNegr/calc_go/godotenv"
 	"os"
 )
+
 
 func Demon_func(){
 	for{
