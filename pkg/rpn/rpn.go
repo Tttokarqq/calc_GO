@@ -1,14 +1,26 @@
 package rpn
 
 import (
-	"errors"
+	// "errors"
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
+
+type Task struct{ // структура для хранения заданий
+	id string
+	arg1 string
+	arg2 string
+	operation string
+	operation_time time.Duration
+	process string // меняется, когда задание берется на выполнение
+}
 
 var ( // кол-во знаков после запятой, сохраняющиеся при расчетах
 	Tochnost = "%.7f"
+	Tasks = []Task{} // список заданий
+	Number_Operation = 0 // id операции
 )
 
 func ChangeTochonst(s string){ // используется в хендлере Accuracy, вызываемом по адресу
@@ -60,7 +72,7 @@ func claearExpr(expression string) (string, error){  // проверка, уда
 
 func isNum(s byte) bool{ // среди цифр есть ".", для работы с десятичными дробями /
 // ошибки для них в основном не описаны, т.к. у меня были более важные дела, да и вообще это необязательно 0_0
-	nums := ".0123456789"
+	nums := "#.0123456789"
 	for i := 0; i < len(nums); i++{
 		if s == nums[i]{return true}
 	}
@@ -88,6 +100,8 @@ func Calc(expression string) (string, error) {
 	// и заменяющий его на возращенную строку (результат вычисления рекусрсии)
 	index := strings.Index(expression, "(") + 1 // индекс первой открытой скобки
 	index_left := 1 // количество открытых левых скобок
+
+
 	for strings.Index(expression, "(") != -1 && index < len(expression){
 		symbol := expression[index]
 		if string(symbol) == "("{
@@ -156,25 +170,36 @@ func Calc(expression string) (string, error) {
 		if i + 1 == len(expression) || znak2 != ""{ 
 			// промежуточное вычисление, когда индекс дошел до конца выражения или найдем второй знак
 			if znak1 == ""{ // когда осталось одно число (т.е. надо вернуть ответ)
-				num1_, _ := strconv.ParseFloat(num1, 64) // проверка, что num1 <> 0, удаление лишних нулей в конце после запятой
-				if num1_znak < 0{
-					num1_ *= -1.0
-				} 
 				// fmt.Println("!!!!", num1, num2, num1_znak, num2_znak)
- 				num1 = fmt.Sprintf(Tochnost	, num1_) // округление
 				if strings.Index(num1, ".") != -1{ // удаление "лишних нулей"
 					i := len(num1) - strings.Index(num1, ".") - 1
 					for string(num1[i]) == "0" { i-- }
 					num1 = num1[0:i + 1]
 					if strings.Index(num1, ".") == len(num1) - 1 { num1 = num1[0:i] } // если осталось одна точка: 45. -> 45
 				}
+				// fmt.Println("exression!:", expression)
+				fmt.Println(Tasks)	
 				return num1, nil
 			}
-			if (znak1 == "+" || znak1 == "-") && (znak2 == "*" || znak2 == "/"){
+			// проверка для параллельного вычиселния. Здесь мне лень объяснять, смотри 
+			if (znak1 == "+" || znak1 == "-") && (znak2 == "+" || znak2 == "-") && string(num1[0]) == "#"{
 				h1 := 0
 				if znak1 == "-"{
 					h1 = -1
-					fmt.Println(expression[ind2 + h1:], expression[0:ind2 + h1])
+					// fmt.Println(expression[ind2 + h1:], expression[0:ind2 + h1])
+				}
+				m, err := Calc(expression[ind2 + h1:]) // отправление в рекурсию, если второй знак с большим приоритетом
+				if err != nil{
+					return "0", err
+				}
+				expression,_  = claearExpr(expression[0:ind2 + h1] +"+" + m) // изменение выражения, с учетом "ответа рекурсии"
+				i, num1, num2, znak1, znak2, num1_znak, num2_znak, ind1, ind2 = -1, "", "", "", "", 1.0, 1.0, 0, 0 
+				// после высчитывания каждой операции ВСЕ сбравсывается и начинается сначала
+			} else if (znak1 == "+" || znak1 == "-") && (znak2 == "*" || znak2 == "/"){
+				h1 := 0
+				if znak1 == "-"{
+					h1 = -1
+					// fmt.Println(expression[ind2 + h1:], expression[0:ind2 + h1])
 				}
 				m, err := Calc(expression[ind2 + h1:]) // отправление в рекурсию, если второй знак с большим приоритетом
 				if err != nil{
@@ -184,36 +209,53 @@ func Calc(expression string) (string, error) {
 				i, num1, num2, znak1, znak2, num1_znak, num2_znak, ind1, ind2 = -1, "", "", "", "", 1.0, 1.0, 0, 0 
 				// после высчитывания каждой операции ВСЕ сбравсывается и начинается сначала
 			} else {
-				num1_, _ := strconv.ParseFloat(num1, 64) // перевод из строки(num1) в дробное(num1_)
-				num1_ *= num1_znak
-				num2_, _ := strconv.ParseFloat(num2, 64)
-				num2_ *= num2_znak
-				znach := ""
-				if znak1 == "-"{
-					znach =  fmt.Sprintf(Tochnost,  num1_ - num2_) 
-					// znach =  strconv.FormatFloat(num1 - num2, 'f', -1, 64)
-				} else if znak1 == "+" {			
-					// znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ + num2_)) 
-					znach =  fmt.Sprintf(Tochnost, num1_ + num2_) 
-				} else if znak1 == "*" {
-					// znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ * num2_)) 
-					znach =  fmt.Sprintf(Tochnost, num1_ * num2_)
-				} else if znak1 == "/" {
-					if num2_ == 0 {return "-1", errors.New("деление на 0")}
-					// znach =  fmt.Sprintf("%.9f", fmt.Sprintf("%g", num1_ / num2_))
-					znach = fmt.Sprintf(Tochnost, num1_ / num2_)
+				// num1_, _ := strconv.ParseFloat(num1, 64) // перевод из строки(num1) в дробное(num1_)
+				// num1_ *= num1_znak
+				// num2_, _ := strconv.ParseFloat(num2, 64)
+				// num2_ *= num2_znak
+				// znach := ""
+				var num1_ string
+				var num2_ string
+				if num1_znak < 0{
+					num1_ = "-" + num1
+				} else {
+					num1_ = num1
 				}
+				if num2_znak < 0{
+					num2_ = "-" + num2
+				} else {
+					num2_ = num2
+				}
+				znach := "#" + strconv.Itoa(Number_Operation)
+				Number_Operation += 1
+				// fmt.Println("operation", num1_ , znak1, num2_)
+				Tasks = append(Tasks, Task{znach, num1_, num2_, znak1, time.Second, "wait"})
+				// if znak1 == "-"{
+				// 	znach =  fmt.Sprintf(Tochnost,  num1_ - num2_) 
+				// 	// znach =  strconv.FormatFloat(num1 - num2, 'f', -1, 64)
+				// } else if znak1 == "+" {			
+				// 	// znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ + num2_)) 
+				// 	znach =  fmt.Sprintf(Tochnost, num1_ + num2_) 
+				// } else if znak1 == "*" {
+				// 	// znach = fmt.Sprintf("%v", fmt.Sprintf("%g", num1_ * num2_)) 
+				// 	znach =  fmt.Sprintf(Tochnost, num1_ * num2_)
+				// } else if znak1 == "/" {
+				// 	if num2_ == 0 {return "-1", errors.New("деление на 0")}
+				// 	// znach =  fmt.Sprintf("%.9f", fmt.Sprintf("%g", num1_ / num2_))
+				// 	znach = fmt.Sprintf(Tochnost, num1_ / num2_)
+				// }
 				h1 := 0 // индексы, если числа отрицательные, нужно брать срез с символа на 1 больше / меньше
-				h2 := 0
+				h2 := 1
 				if num1_znak < 0 { h1 = 1 }
-				if num2_znak < 0 { h2 = 1 } 
-				expression = expression[h1:ind1] + znach + expression[ind2 - h2 + len(num2):]
+				if num2_znak < 0 { h2 = 1} 
+				// fmt.Println("&&&", expression[ind1 - h1 + len(num2):], znach, expression[ind2 - h2 + len(num2):], ind1, ind2)
+				////
+				expression = expression[:ind1 - h1] + znach + expression[ind2 - h2 + 1 + len(num2):]
 				i, num1, num2, znak1, znak2, num1_znak, num2_znak, ind1, ind2, znach = -1, "", "", "", "", 1.0, 1.0, 0, 0, ""
-				
-				
 			}
-			// fmt.Println(expression)	
+			// fmt.Println("exression:", expression)	
 		}
 	}
+	
 	return expression, nil
 }

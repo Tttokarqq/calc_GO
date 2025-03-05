@@ -10,9 +10,8 @@ import(
 
 func Demon_func(){
 	// vars.Load()
-	vars.Init()
 	for{
-		fmt.Println(os.Getenv("GITHUB_USERNAME"))
+		fmt.Println("!!!")
 		time.Sleep(2 * time.Second)
 	}
 }
