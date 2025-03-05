@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/MaksaNeNegr/calc_go/application"
 	"github.com/MaksaNeNegr/calc_go/demon"
+	"github.com/MaksaNeNegr/calc_go/vars"
 )
 
 func main() {

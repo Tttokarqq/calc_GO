@@ -2,6 +2,11 @@ package vars
 
 import {
 	"os"
+	"fmt"
 }
 
-os.Setenv("SSS", "#@")
+func Init(){
+	os.Setenv("SSS", "#@")
+	fmt.Println("!!!")
+}
+	
