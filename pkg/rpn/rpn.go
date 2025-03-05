@@ -2,24 +2,26 @@ package rpn
 
 import (
 	// "errors"
-	"fmt"
+	// "fmt"
 	"strconv"
 	"strings"
 	"time"
+	"os"
 )
 
-type Task struct{ // структура для хранения заданий
-	id string
-	arg1 string
-	arg2 string
-	operation string
-	operation_time time.Duration
-	process string // меняется, когда задание берется на выполнение
+type Task struct {
+    ID              string        `json:"id"`
+    Arg1            string        `json:"arg1"`
+    Arg2            string        `json:"arg2"`
+    Operation       string        `json:"operation"`
+    OperationTime   time.Duration `json:"operation_time"`
+    Process         string        `json:"process"` // Например, "waiting", "in_progress", "completed"
+    Result          string        `json:"result,omitempty"` // Результат, если задача завершена
 }
 
 var ( // кол-во знаков после запятой, сохраняющиеся при расчетах
 	Tochnost = "%.7f"
-	Tasks = []Task{} // список заданий
+	Tasks =   // список заданий
 	Number_Operation = 0 // id операции
 )
 
@@ -178,7 +180,7 @@ func Calc(expression string) (string, error) {
 					if strings.Index(num1, ".") == len(num1) - 1 { num1 = num1[0:i] } // если осталось одна точка: 45. -> 45
 				}
 				// fmt.Println("exression!:", expression)
-				fmt.Println(Tasks)	
+				// fmt.Println(Tasks)	
 				return num1, nil
 			}
 			// проверка для параллельного вычиселния. Здесь мне лень объяснять, смотри 
@@ -229,7 +231,21 @@ func Calc(expression string) (string, error) {
 				znach := "#" + strconv.Itoa(Number_Operation)
 				Number_Operation += 1
 				// fmt.Println("operation", num1_ , znak1, num2_)
-				Tasks = append(Tasks, Task{znach, num1_, num2_, znak1, time.Second, "wait"})
+				var tm time.Duration
+				if znak1 == "+"{
+					s, _ := strconv.Atoi(os.Getenv("pTIME_ADDITION_MS"))
+					tm = time.Millisecond  * time.Duration(s)
+				} else if znak1 == "-" {
+					s, _ := strconv.Atoi(os.Getenv("TIME_SUBTRACTION_MSS"))
+					tm = time.Millisecond  * time.Duration(s)
+				} else if znak1 == "*" {
+					s, _ := strconv.Atoi(os.Getenv("TIME_MULTIPLICATIONS_MS"))
+					tm = time.Millisecond  * time.Duration(s)
+				} else {
+					s, _ := strconv.Atoi(os.Getenv("TIME_DIVISIONS_MS"))
+					tm = time.Millisecond  * time.Duration(s)
+				}
+				Tasks = append(Tasks, Task{znach, num1_, num2_, znak1, tm , "wait", ""})
 				// if znak1 == "-"{
 				// 	znach =  fmt.Sprintf(Tochnost,  num1_ - num2_) 
 				// 	// znach =  strconv.FormatFloat(num1 - num2, 'f', -1, 64)
@@ -253,7 +269,6 @@ func Calc(expression string) (string, error) {
 				expression = expression[:ind1 - h1] + znach + expression[ind2 - h2 + 1 + len(num2):]
 				i, num1, num2, znak1, znak2, num1_znak, num2_znak, ind1, ind2, znach = -1, "", "", "", "", 1.0, 1.0, 0, 0, ""
 			}
-			// fmt.Println("exression:", expression)	
 		}
 	}
 	

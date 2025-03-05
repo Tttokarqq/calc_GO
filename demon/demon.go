@@ -1,17 +1,22 @@
 package demon
 
 import(
-	"fmt"
+	// "fmt"
 	"time"
-	// "github.com/MaksaNeNegr/calc_go/vars"
-	// "os"
+	"os"
+	// "syns"
+	"strconv"
 )
 
 
 func Demon_func(){
-	// vars.Load()
-	for{
-		fmt.Println("!!!")
-		time.Sleep(2 * time.Second)
+	s, _ := strconv.Atoi(os.Getenv("COMPUTING_POWER"))
+	for i := 0; i < s; i++{
+		go func() {
+			for{
+				time.Sleep(10 * time.Second)
+
+			}
+		} ()
 	}
 }

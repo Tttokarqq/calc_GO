@@ -63,24 +63,20 @@ func CalcHandler(w http.ResponseWriter, r *http.Request) {
 	var req Request
 	decoder := json.NewDecoder(r.Body)
 	decoder.Decode(&req)
-	// res_, err := rpn.Calc(req.Expression)
+	_, err := rpn.Calc(req.Expression)
 	res_ := strconv.Itoa(id)
 	id += 1
 	w.Header().Set("Content-Type", "application/json")
-	// if err == nil{
-	// 	w.WriteHeader(200)
-	// 	var res Response1
-	// 	res.Res = res_
-	// 	json.NewEncoder(w).Encode(res)
-	// } else {
-	// 	retErr(w, 422, err)
-	// }
-	ex1 := express{res_, "wait", "none"}
-	List1.Expressions = append(List1.Expressions, ex1)
-	w.WriteHeader(200)
-	var res Response1
-	res.Res = res_
-	json.NewEncoder(w).Encode(res)
+	if err == nil{
+		ex1 := express{res_, "wait", "none"}
+		List1.Expressions = append(List1.Expressions, ex1)
+		w.WriteHeader(200)
+		var res Response1
+		res.Res = res_
+		json.NewEncoder(w).Encode(res)
+	} else {
+		retErr(w, 422, err)
+	}
 	// fmt.Printf(res_)
 	// fmt.Println(req.Expression)
 
@@ -103,9 +99,15 @@ func accuracy_(w http.ResponseWriter, r *http.Request) {
 func showEx(w http.ResponseWriter, r *http.Request){
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)                      
-	fmt.Println(List1)
+	// fmt.Println(rpn.Tasks)
+	
 	json.NewEncoder(w).Encode(List1)
-	fmt.Println("!")
+}
+
+
+
+func getWork(w http.ResponseWriter, r *http.Request){
+	fmt.Println("!1")
 }
 
 func (a *Application) Run() { 
@@ -113,6 +115,7 @@ func (a *Application) Run() {
 	// http.HandleFunc("/api/v1/calculate/acc", accuracy_)
 	http.HandleFunc("/api/v1/calculate/acc", accuracy_)
 	http.HandleFunc("/api/v1/expressions", showEx)
+	http.HandleFunc("/internal/task", getWork)
 	http.ListenAndServe(":8080", nil)
 }
 // curl http://localhost:8080/api/v1/calculate/acc?accuracy=2
