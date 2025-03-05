@@ -8,6 +8,7 @@ import (
 
 func main() {
 	// запуск сервера и 
+	Init()
 	app := application.New()
 	go demon.Demon_func()
 	go app.Run()
